@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Evil Spotify"
+description = "An Android offline music player that scans music files on the phone, supports personal playlists, and continues playing while the screen is locked, with an original red visual identity."
+version = "1.0.0"
+id = "artifacts/evil-music-player"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 23034
+
+[services.development]
+run = "pnpm --filter @workspace/evil-music-player run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/evil-music-player", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/evil-music-player", "run", "serve" ]
+
+[services.env]
+PORT = "23034"
+BASE_PATH = "/"
