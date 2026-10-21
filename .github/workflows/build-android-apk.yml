@@ -1,0 +1,66 @@
+name: Build Evil Spotify APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build installable Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out the project
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate the native Android project
+        run: pnpm --filter @workspace/evil-music-player exec expo prebuild --platform android --clean --no-install
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build the APK
+        working-directory: artifacts/evil-music-player/android
+        run: ./gradlew assembleDebug
+
+      - name: Give the APK a simple filename
+        run: cp artifacts/evil-music-player/android/app/build/outputs/apk/debug/app-debug.apk Evil-Spotify.apk
+
+      - name: Save the APK for download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Evil-Spotify-APK
+          path: Evil-Spotify.apk
+          if-no-files-found: error
+          retention-days: 14
